@@ -1,0 +1,15 @@
+from telegram.ext import CommandHandler
+from telegram import Update
+from telegram.ext import ContextTypes
+from bot.keyboards import main_menu_keyboard
+from PIL import Image
+
+img = Image.open(r"G:\asset\fyp.jpg")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        f"{img.show()}\nДобро пожаловать в главное меню ZUGshop! Это бот для покупки голды в standoff 2 и ТГ-премиума. \n \nДля взаимодействия с ботом используй кнопки. \n \n Если возникнут вопросы пиши в поддержку.",
+        reply_markup=main_menu_keyboard()
+    )
+
+# Важно: должен быть список, а не функция!
+start_handlers = [CommandHandler("start", start)]
