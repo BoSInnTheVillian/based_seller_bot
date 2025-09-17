@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, ContextTypes
 from bot.storage import Storage
 from bot.keyboards import main_menu_keyboard
-
+import random
 db = Storage()
 
 async def view_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,12 +41,12 @@ async def view_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += (
                 f"\n<b>{item['name']}</b>\n"
                 f"│\n"
-                f"├ Цена: <code>{item['price']}₽</code>\n"
+                f"├ Цена: <code>{item['price']}BYN</code>\n"
                 f"├ Количество: <b>{item['count']}</b>\n"
-                f"└ Сумма: <code>{item['sum']}₽</code>\n"
+                f"└ Сумма: <code>{item['sum']}BYN</code>\n"
             )
     text += "━━━━━━━━━━━━━━\n"
-    text += f"💳 <b>Итого: <code>{total}₽</code></b>"
+    text += f"💳 <b>Итого: <code>{total}BYN</code></b>"
 
     # Создаем клавиатуру с кнопками +/-
     keyboard = []
@@ -60,7 +60,7 @@ async def view_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Добавляем управляющие кнопки
     keyboard.append([
         InlineKeyboardButton("🗑 Очистить корзину", callback_data="clear_cart"),
-        InlineKeyboardButton("🛍️ В каталог", callback_data="catalog")
+        InlineKeyboardButton("🏠 Главное меню ", callback_data="to_main_menu")
     ])
 
     keyboard.append([
@@ -100,8 +100,96 @@ async def clear_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer("Корзина очищена!")
     await view_cart(update, context)
 
+
+async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Оформление заказа"""
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    cart = db.get_cart(user_id)
+    products = db.get_products()
+
+    # Группируем товары по ID с количеством
+    items_count = {}
+    for item_id in cart.get("items", []):
+        items_count[item_id] = items_count.get(item_id, 0) + 1
+
+    # Формируем данные для отображения
+    cart_items = []
+    total = 0
+    for item_id, count in items_count.items():
+        product = next((p for p in products if p["id"] == item_id), None)
+        if product:
+            sum_price = product["price"] * count
+            cart_items.append({
+                "id": product["id"],
+                "name": product["name"],
+                "price": product["price"],
+                "count": count,
+                "sum": sum_price
+            })
+            total += sum_price
+
+    if not cart_items:
+        await query.answer("❌ Корзина пуста")
+        return
+
+    # Генерируем номер заказа
+    order_number = random.randint(100, 999)
+
+    # Формируем текст заказа
+    order_text = f"🧾 <b>Заказ №{order_number}</b>\n\n"
+
+    for item in cart_items:
+        order_text += (
+            f"🪖 <b>Товар:</b> {item['name']}\n"
+            f"🔢 <b>Количество:</b> {item['count']} gold\n"
+            f"💸 <b>Цена за 1:</b> {item['price']} BYN\n"
+            f"💵 <b>Итого:</b> {item['sum']} BYN\n\n"
+        )
+
+    order_text += (
+        f"💳 <b>Итого к оплате:</b> {total} BYN\n\n"
+        f"💳 <b>Оплата</b>\n"
+        f"Перевод на BYN-карту 1111 1111 1111 1111 (БеларусьБанк)\n\n"
+        f"<code>0000 0000 0000 0000</code> 'Альфа-Банк' Беларусь\n\n"
+        f"• <b>ЕРИП</b> (без комиссии банков):\n"
+        f"ЕРИП → Банковские, финансовые услуги → Банки НКФО → Альфа-Банк → Пополнение счёта → <code>2222 2222 2222 2222</code>\n\n"
+        f"После оплаты нажмите кнопку ниже и отправьте чек 🧾"
+    )
+
+    await query.edit_message_text(
+        order_text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📸 Отправить чек", callback_data="send_receipt")],
+            [InlineKeyboardButton("◀️ Назад в корзину", callback_data="view_cart")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="to_main_menu")]
+        ])
+    )
+
+
+async def handle_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик отправки чека"""
+    query = update.callback_query
+    await query.answer()
+
+    await query.edit_message_text(
+        "📸 <b>Отправьте скриншот или фото чека об оплате</b>\n\n"
+        "• Сделайте скриншот перевода\n"
+        "• Или сфотографируйте чек\n"
+        "• Отправьте фото в этот чат",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("◀️ Назад к заказу", callback_data="checkout")],
+            [InlineKeyboardButton("🏠 Главное меню", callback_data="to_main_menu")]
+        ])
+    )
+
 cart_handlers = [
         CallbackQueryHandler(view_cart, pattern="^view_cart$"),
         CallbackQueryHandler(change_quantity, pattern="^(increase|decrease)_"),
-        CallbackQueryHandler(clear_cart, pattern="^clear_cart$")
+        CallbackQueryHandler(clear_cart, pattern="^clear_cart$"),
+        CallbackQueryHandler(checkout, pattern="^checkout$"),
+        CallbackQueryHandler(handle_receipt, pattern="^send_receipt$")
     ]

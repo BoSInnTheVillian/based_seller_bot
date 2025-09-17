@@ -1,21 +1,15 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from random import choice
 
-THEMES = {
-    "main": ["🛋️", "🏠", "✨"],
-    "catalog": ["🛒", "📦", "📌"],
-    "cart": ["💰", "🛍️", "🧾"],
-    "payment": ["💳", "💎", "🪙"]
-}
 
-def _random_emoji(section):
-    return choice(THEMES[section])
+
+
 
 def consultant_products_keyboard(products: list):
     """Клавиатура для товаров консультанта (3 кнопки + возврат)"""
     buttons = [
         [InlineKeyboardButton(
-            f"📌 {p['name']} ({p['price']}₽)",
+            f"📌 {p['name']}",
             callback_data=f"item_{p['id']}"
         )]
         for p in products[:3]  # Ограничиваем 3 товарами
@@ -26,10 +20,10 @@ def consultant_products_keyboard(products: list):
     return InlineKeyboardMarkup(buttons)
 
 def main_menu_keyboard():
-    emoji = _random_emoji("main")
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"Standoff 2 GOLD", callback_data="catalog")],
-        [InlineKeyboardButton(f"TG-premium", callback_data="options")],
+        [InlineKeyboardButton(f"💰Standoff 2 GOLD💰", callback_data="catalog")],
+        [InlineKeyboardButton(f"💎🌟TG-premium🌟💎", callback_data="options")],
+        [InlineKeyboardButton("🛒 Корзина", callback_data="view_cart")]
     ])
 
 def back_to_menu_keyboard():
@@ -43,12 +37,12 @@ def calculation_keyboard():
         [InlineKeyboardButton("🏠 Главное меню", callback_data="to_main_menu")]
     ])
 
-def items_keyboard(items: list):
+def items_keyboard(items: list, category: str):
+    """Универсальная клавиатура для списка товаров с категорией"""
     buttons = [
         [InlineKeyboardButton(
-            f" {item['name']} - 🟡{item['price']}₽🟡",
-
-            callback_data=f"item_{item['id']}"
+            f" {item['name']} {item['price']}BYN",
+            callback_data=f"item_{category}_{item['id']}"  # Добавляем категорию
         )]
         for item in items
     ]
@@ -57,10 +51,17 @@ def items_keyboard(items: list):
     ])
     return InlineKeyboardMarkup(buttons)
 
-def product_keyboard(item_id: int):
-    """ФИКС: Для клининга без категорий"""
+def product_keyboard(item_id: int, category: str):
+    """Универсальная клавиатура для товара с категорией"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 В главное меню", callback_data="to_main_menu")]
+        [
+            InlineKeyboardButton("➕ Добавить в корзину", callback_data=f"add_{item_id}"),
+            InlineKeyboardButton("🛒 Корзина", callback_data="view_cart")
+        ],
+        [
+            InlineKeyboardButton("◀️ Назад", callback_data=f"back_{category}"),
+            InlineKeyboardButton("🏠 Главная", callback_data="to_main_menu")
+        ]
     ])
 def cart_keyboard(cart_items: list):
     buttons = []
@@ -76,7 +77,7 @@ def cart_keyboard(cart_items: list):
     buttons.extend([
         [
             InlineKeyboardButton("🗑 Очистить корзину", callback_data="clear_cart"),
-            InlineKeyboardButton("🛍️ В каталог", callback_data="catalog")
+            InlineKeyboardButton("🏠 Главная", callback_data="to_main_menu")
         ],
         [InlineKeyboardButton("💳 Оформить заказ", callback_data="checkout")]
     ])

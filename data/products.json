@@ -5,12 +5,13 @@
         "price": 0.027,
         "pricing-type": "per_gold",
         "category": "gold",
-        "description": "Голда в стандоф, цена указана за единицу голды. Можно купить минимум 100 голды"
+
+        "description": "Голда в standoff 2, цена указана за единицу голды. Можно купить минимум 100 голды"
     },
     {
         "id": 2,
         "name": "TG-premium 12",
-        "price": 90,
+        "price": 99,
         "pricing_type": "per_item",
         "category": "premium",
         "description": "Подписка ТГ-премиум на 12 месяцев"
@@ -18,7 +19,7 @@
     {
         "id": 3,
         "name": "TG-premium 9",
-        "price": 90,
+        "price": 60,
         "pricing_type": "per_item",
         "category": "premium",
         "description": "Подписка ТГ-премиум на 9 месяцев"
@@ -26,7 +27,7 @@
     {
         "id": 4,
         "name": "TG-premium 6",
-        "price": 90,
+        "price": 40,
         "pricing_type": "per_item",
         "category": "premium",
         "description": "Подписка ТГ-премиум на 6 месяцев"

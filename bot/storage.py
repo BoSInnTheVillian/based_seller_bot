@@ -44,7 +44,7 @@ class Storage:
         """Проверяет точность цен в ответе AI"""
         products = self.get_products()
         for p in products:
-            if f'«{p["name"]}»' in response and f'{p["price"]}₽' not in response:
+            if f'«{p["name"]}»' in response and f'{p["price"]}BYN' not in response:
                 return False
         return True
 
@@ -83,9 +83,10 @@ class Storage:
     def add_to_cart(self, user_id: int, item_id: int):
         """Добавить товар в корзину"""
         cart = self.get_cart(user_id)
-        if item_id not in cart["items"]:
-            cart["items"].append(item_id)
-            self.save_cart(user_id, cart)
+        if "items" not in cart:
+            cart["items"] = []
+        cart["items"].append(item_id)
+        self.save_cart(user_id, cart)
 
     def remove_from_cart(self, user_id: int, item_id: int):
         """Удалить товар из корзины"""
@@ -143,10 +144,3 @@ class Storage:
         return last_time and (time.time() - last_time) < interval_sec
 
     # --- Для SberCloud API ---
-    def format_products_for_prompt(self) -> str:
-        """Форматирует товары для промпта"""
-        products = self.get_products()
-        return "\n".join(
-            f"ID: {p['id']} | «{p['name']}» ({p['price']}₽) | Категория: {p.get('category', 'без категории')}"
-            for p in products
-        )
