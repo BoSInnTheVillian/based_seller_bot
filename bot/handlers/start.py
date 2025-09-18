@@ -14,9 +14,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     img_buffer.seek(0)
     await update.message.reply_photo(photo=img_buffer)
     await update.message.reply_text(
-        f"\nДобро пожаловать в главное меню ZUGshop! Это бот для покупки голды в standoff 2 и ТГ-премиума. \n \nДля взаимодействия с ботом используй кнопки. \n \n Если возникнут вопросы пиши в поддержку.",
+        f"\nДобро пожаловать в главное меню ZUGshop! Это бот для покупки голды в standoff 2 и ТГ-премиума. \n \nДля взаимодействия с ботом используй кнопки. \n \n Если возникнут вопросы пиши в поддержку @nick_username.",
         reply_markup=main_menu_keyboard()
     )
-
-# Важно: должен быть список, а не функция!
 start_handlers = [CommandHandler("start", start)]

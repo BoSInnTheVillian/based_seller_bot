@@ -3,6 +3,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 from bot.storage import Storage
 from bot.keyboards import main_menu_keyboard
 import random
+from config.config import Config
 db = Storage()
 
 async def view_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -151,10 +152,7 @@ async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     order_text += (
         f"💳 <b>Итого к оплате:</b> {total} BYN\n\n"
         f"💳 <b>Оплата</b>\n"
-        f"Перевод на BYN-карту 1111 1111 1111 1111 (БеларусьБанк)\n\n"
-        f"<code>0000 0000 0000 0000</code> 'Альфа-Банк' Беларусь\n\n"
-        f"• <b>ЕРИП</b> (без комиссии банков):\n"
-        f"ЕРИП → Банковские, финансовые услуги → Банки НКФО → Альфа-Банк → Пополнение счёта → <code>2222 2222 2222 2222</code>\n\n"
+        f"Перевод на BYN-карту {Config.CARD_NUMBER} ({Config.BANK_NAME})\n\n"
         f"После оплаты нажмите кнопку ниже и отправьте чек 🧾"
     )
 
