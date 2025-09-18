@@ -95,7 +95,7 @@ async def handle_gold_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         quantity = int(update.message.text)
-        if quantity <= 100:
+        if quantity < 100:
             await update.message.reply_text("❌ Количество должно быть больше 100")
             return
         if quantity > 1000000:
