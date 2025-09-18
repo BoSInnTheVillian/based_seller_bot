@@ -77,7 +77,7 @@ async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             f"🪙 <b>{gold_item['name']}</b>\n\n"
             f"💰 Цена за единицу: <code>{gold_item['price']} BYN</code>\n\n"
-            f"➡️ <b>Введите количество голды которое хотите купить:</b>",
+            f"➡️ <b>Введите количество голды которое хотите купить (минимум 100):</b>",
             parse_mode="HTML",
             reply_markup=back_to_menu_keyboard()
         )
@@ -95,10 +95,10 @@ async def handle_gold_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         quantity = int(update.message.text)
-        if quantity <= 0:
-            await update.message.reply_text("❌ Количество должно быть больше 0")
+        if quantity <= 100:
+            await update.message.reply_text("❌ Количество должно быть больше 100")
             return
-        if quantity > 10000:
+        if quantity > 1000000:
             await update.message.reply_text("❌ Слишком большое количество")
             return
 
@@ -128,50 +128,40 @@ async def handle_gold_quantity(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def handle_gold_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик подтверждения добавления gold в корзину"""
+    """Сверхбыстрая версия"""
     query = update.callback_query
+    await query.answer()  # Мгновенный ответ
+
     user_id = query.from_user.id
 
-    if user_id not in user_states or 'quantity' not in user_states[user_id]:
-        await query.answer("❌ Ошибка: данные не найдены")
-        await query.edit_message_text("❌ Ошибка: данные не найдены")
+    # Быстрая проверка
+    if user_id not in user_states:
+        return  # Просто игнорируем, т.к. уже ответили
+
+    item_info = user_states.get(user_id)
+    if not item_info or 'quantity' not in item_info:
         return
 
     if query.data == "confirm_gold":
-        # Показываем алерт ТОЛЬКО при подтверждении
-        await query.answer("✅ Товар добавлен в корзину!")
+        # Быстрое добавление в корзину
+        cart = db.get_cart(user_id)
+        if "items" not in cart:
+            cart["items"] = []
 
-        item_info = user_states[user_id]
+        # Добавляем пачкой
+        cart["items"].extend([item_info['item_id']] * item_info['quantity'])
+        db.save_cart(user_id, cart)
 
-        # Добавляем товар в корзину quantity раз
-        for _ in range(item_info['quantity']):
-            db.add_to_cart(user_id, item_info['item_id'])
-
-        # Очищаем состояние
-        del user_states[user_id]
-
+        # Быстрое обновление сообщения
         await query.edit_message_text(
-            f"✅ <b>Добавлено в корзину!</b>\n\n"
-            f"🪙 {item_info['name']}\n"
-            f"📦 Количество: {item_info['quantity']} Голды\n"
-            f"💵 Сумма: {item_info['total_price']} BYN",
-            parse_mode="HTML",
+            f"✅ Добавлено {item_info['quantity']} gold в корзину!",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🛒 Корзина", callback_data="view_cart")],
-                [InlineKeyboardButton("🏠 Главное меню", callback_data="to_main_menu")]
+                [InlineKeyboardButton("🏠 Главная", callback_data="to_main_menu")]
             ])
         )
-    else:
-        # При отмене показываем другой алерт
-        await query.answer("❌ Добавление отменено")
 
-        # Очищаем состояние
         del user_states[user_id]
-
-        await query.edit_message_text(
-            "❌ Добавление отменено",
-            reply_markup=main_menu_keyboard()
-        )
 
 
 async def show_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -191,15 +181,23 @@ async def show_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавление товара в корзину (для premium)"""
     query = update.callback_query
-    await query.answer("✅ Товар добавлен в корзину!")
-
+    await query.answer("✅ Товар добавлен в корзину!")  # Отвечаем сразу
+    user_id = query.from_user.id
+    if user_id not in user_states:
+        await query.edit_message_text("❌ Сессия устарела")
+        return
     try:
         item_id = int(query.data.split('_')[1])
         user_id = query.from_user.id
 
-        db.add_to_cart(user_id, item_id)
-
-        # Находим товар для получения категории
+        # Быстрое добавление без лишних операций
+        cart = db.get_cart(user_id)
+        if "items" not in cart:
+            cart["items"] = []
+        cart["items"].append(item_id)
+        db.save_cart(user_id, cart)
+        item_info = user_states[user_id]
+        # Обновляем клавиатуру асинхронно
         item = next((i for i in db.get_products() if i['id'] == item_id), None)
         if item:
             await query.edit_message_reply_markup(
@@ -208,7 +206,6 @@ async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         await query.answer(f"❌ Ошибка: {str(e)}")
-
 
 async def ask_consultant(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик кнопки консультанта"""

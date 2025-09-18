@@ -5,7 +5,7 @@ from bot.keyboards import main_menu_keyboard
 from PIL import Image
 from io import BytesIO
 
-img_path = r"G:\asset\fyp.jpg"
+img_path = "assets/fyp.jpg"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     img = Image.open(img_path)
